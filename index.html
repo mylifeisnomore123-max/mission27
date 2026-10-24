@@ -204,7 +204,7 @@ const $=id=>document.getElementById(id);
 function toast(m){const t=$('toast');t.textContent=m;t.classList.remove('hidden');clearTimeout(toast.h);toast.h=setTimeout(()=>t.classList.add('hidden'),2600)}
 
 // ===== State & storage (local cache + Firestore) =====
-function fresh(){return{sessions:[],tasks:[],settings:{exam:'2027-02-01',goal:120},timer:{mode:'stopwatch',acc:0,start:null,subject:SUBJECTS[0]}}}
+function fresh(){return{sessions:[],tasks:[],settings:{exam:'2027-03-14',goal:120},timer:{mode:'stopwatch',acc:0,start:null,subject:SUBJECTS[0]}}}
 let db=fresh(), uid=null, days={}, unsub=null, ticking=null;
 const LK=()=>'m27_v3_'+uid;
 function save(){if(!uid)return;try{localStorage.setItem(LK(),JSON.stringify(db))}catch(e){toast('লোকাল সেভ হয়নি')}}
@@ -215,7 +215,7 @@ function push(d){
   $('syncSt').textContent='সিঙ্ক হচ্ছে...';
   fs.doc('users/'+uid+'/days/'+d).set(dayData(d)).then(()=>$('syncSt').textContent='✓ ক্লাউডে সেভ আছে').catch(()=>$('syncSt').textContent='⚠ অফলাইন — ইন্টারনেট এলে আবার চেষ্টা করুন');
 }
-function pushSettings(){if(uid)fs.doc('users/'+uid).set({settings:{exam:db.settings.exam,goal:db.settings.goal}},{merge:true}).catch(()=>{})}
+function pushSettings(){if(uid)fs.doc('users/'+uid).set({settings:{exam:db.settings.exam,goal:db.settings.goal,userSet:!!db.settings.userSet}},{merge:true}).catch(()=>{})}
 function rebuild(){db.sessions=[];db.tasks=[];Object.values(days).forEach(x=>{db.sessions.push(...(x.sessions||[]));db.tasks.push(...(x.tasks||[]))})}
 
 async function onLogin(u){
@@ -228,6 +228,7 @@ async function onLogin(u){
     snap.forEach(d=>days[d.id]=d.data());
     const us=await fs.doc('users/'+uid).get();
     if(us.exists&&us.data().settings)Object.assign(db.settings,us.data().settings);
+    if(!db.settings.userSet)db.settings.exam='2027-03-14';
     // লোকালে আছে কিন্তু ক্লাউডে নেই — মার্জ করে আপলোড
     const have=new Set();Object.values(days).forEach(x=>(x.sessions||[]).concat(x.tasks||[]).forEach(i=>have.add(i.id)));
     const dirty=new Set();
@@ -376,6 +377,7 @@ function renderStats(){
 // ===== Settings / countdown =====
 function renderSettings(){$('setExam').value=db.settings.exam;$('setGoal').value=db.settings.goal}
 function saveSettings(){
+  db.settings.userSet=true;
   if($('setExam').value)db.settings.exam=$('setExam').value;
   db.settings.goal=Math.max(10,parseInt($('setGoal').value)||120);
   save();pushSettings();countdown();renderGoal();toast('সেটিং সেভ হয়েছে');
@@ -384,6 +386,7 @@ function countdown(){const d=Math.ceil((new Date(db.settings.exam+'T09:00:00')-n
 
 // ===== Init =====
 function initUI(){
+  if(!db.settings.userSet)db.settings.exam='2027-03-14';
   $('subject').innerHTML=SUBJECTS.map(s=>`<option>${esc(s)}</option>`).join('');
   $('subject').value=SUBJECTS.includes(T().subject)?T().subject:SUBJECTS[0];
   paintMode();paintBtns();tick();renderGoal();renderTasks();countdown();show('today');
