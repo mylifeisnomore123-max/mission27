@@ -44,6 +44,7 @@ body{font-family:'Hind Siliguri',sans-serif;-webkit-tap-highlight-color:transpar
       <button onclick="doSignup()" class="w-full bg-slate-800 hover:bg-slate-700 font-bold py-2.5 rounded-xl text-sm">নতুন রেজিস্ট্রেশন</button>
       <button onclick="doGoogle()" class="w-full bg-white text-slate-800 font-bold py-2.5 rounded-xl text-sm"><i class="fa-brands fa-google text-rose-500"></i> Google দিয়ে চালিয়ে যান</button>
       <button onclick="doReset()" class="w-full text-xs text-sky-400 pt-1">পাসওয়ার্ড ভুলে গেছেন?</button>
+      <button onclick="installApp()" class="instBtn hidden w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold py-2.5 rounded-xl text-sm"><i class="fa-solid fa-download"></i> অ্যাপ ইনস্টল করুন</button>
     </div>
   </div>
 </div>
@@ -149,6 +150,13 @@ body{font-family:'Hind Siliguri',sans-serif;-webkit-tap-highlight-color:transpar
     <h2 class="text-sm font-bold"><i class="fa-solid fa-gear"></i> সেটিং</h2>
     <div><label class="text-[11px] text-slate-400">পরীক্ষার তারিখ</label><input id="setExam" type="date" class="inp" onchange="saveSettings()"></div>
     <div><label class="text-[11px] text-slate-400">দৈনিক লক্ষ্য (মিনিট)</label><input id="setGoal" type="number" min="10" step="10" class="inp" onchange="saveSettings()"></div>
+  </div>
+  <div id="instCard" class="card space-y-2.5">
+    <h2 class="text-sm font-bold"><i class="fa-solid fa-mobile-screen text-amber-400"></i> অ্যাপ ইনস্টল</h2>
+    <button onclick="installApp()" class="instBtn hidden w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold py-2.5 rounded-xl text-sm"><i class="fa-solid fa-download"></i> অ্যাপ ইনস্টল করুন</button>
+    <p class="iosHint hidden text-xs text-slate-300">iPhone: Safari-তে নিচের <b>Share</b> বাটন চাপুন → <b>Add to Home Screen</b>।</p>
+    <p class="genHint hidden text-xs text-slate-300">Chrome-এর ডানে ওপরের <b>⋮ মেনু</b> → <b>Install app</b> বা <b>Add to Home screen</b> চাপুন।</p>
+    <p class="doneHint hidden text-xs text-emerald-300">✓ অ্যাপ ইনস্টল করা আছে।</p>
   </div>
   <div class="card space-y-3">
     <h2 class="text-sm font-bold"><i class="fa-solid fa-cloud text-sky-400"></i> অ্যাকাউন্ট</h2>
@@ -381,6 +389,19 @@ function initUI(){
   paintMode();paintBtns();tick();renderGoal();renderTasks();countdown();show('today');
   if(!ticking)ticking=setInterval(()=>{if(uid&&T().start)tick()},500);
 }
+// ===== Install =====
+let defer=null;
+const standalone=matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;
+const isIOS=/iphone|ipad|ipod/i.test(navigator.userAgent);
+function paintInstall(){
+  const can=!!defer&&!standalone,ios=isIOS&&!standalone;
+  const set=(c,on)=>document.querySelectorAll(c).forEach(b=>b.classList.toggle('hidden',!on));
+  set('.instBtn',can);set('.iosHint',ios);set('.genHint',!can&&!ios&&!standalone);set('.doneHint',standalone);
+}
+window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();defer=e;paintInstall()});
+window.addEventListener('appinstalled',()=>{defer=null;toast('ইনস্টল সম্পন্ন!');paintInstall()});
+async function installApp(){if(!defer)return;defer.prompt();try{await defer.userChoice}catch(e){}defer=null;paintInstall()}
+paintInstall();
 if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
 </script>
 </body>
